@@ -276,7 +276,7 @@ Remember that it is at this level that we establish the hierarchy of how our pai
 
 Let's extract it by comparing everything to everything else.
 ```{r interaction means all}
-rcbd_means_all 
+rcbd_means_all <-emmeans(rcbd_mod, ~krate_kgha:nrate_kgha)
 
 rcbd_means_all
 ```
@@ -288,7 +288,8 @@ Now that we extracted means, let's perform pairwise comparisons among them.
 rcbd_cld_all <- cld(rcbd_means_all, 
                    reversed=T, 
                    adjust="none",
-               Letters=letters)
+               Letters=letters,
+               alpha = .05)
 
 rcbd_cld_all
 ```
@@ -296,7 +297,10 @@ rcbd_cld_all
 Let's do some light wrangling here to be able to plot these.  
 
 ```{r selected pwc}
-rcbd_cld_selected <- rcbd_cld_all 
+rcbd_cld_selected <- rcbd_cld_all %>%
+  as.data.frame() %>%
+  mutate(letter = trimws(.group)) %>%
+  mutate(trtname = paste0(nrate_kgha, "+", krate_kgha))
 
 rcbd_cld_selected
 ```
@@ -306,9 +310,40 @@ Let's plot our results, including both **raw data** (for allowing our audience t
 Let's make this plot publication ready.  
 
 ```{r rcbd final plot}
+ ggplot() +
+ geom_boxplot(data = rcbd_dfw,
+              aes(x = krate_kgha, 
+                  y = yield_kgha,
+                  fill = trtname )
+              ) + 
+  geom_jitter (data = rcbd_dfw,
+              aes (x = krate_kgha, y = yield_kgha),
+               alpha = .6) + 
+  geom_label(data = rcbd_cld_selected,
+            aes(x = krate_kgha, 
+                y = emmean,
+                label = letter),
+            size = 3,
+            label.padding = unit(.1, "lines")
+            ) + 
+  labs(x = "N rate + K rate (kh/ha)",
+       y = "Yield (kg/ha)"
+       )+
+  scale_fill_viridis_d() + 
+  scale_color_viridis_d() +
+  facet_grid(~nrate_kgha)
+  theme(legend.position = c("none"))
+
+  
+ggsave("../output/rcbd_means.png")
+       
 
 ```
 
+#K rates inside N
+```{r}
+
+```
 
 
 
